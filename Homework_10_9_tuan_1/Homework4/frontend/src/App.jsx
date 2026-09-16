@@ -9,7 +9,7 @@ function App() {
     const [gameOver, setGameOver] = useState(false);
 
     useEffect(() => {
-        fetch("http://localhost:3000/api/game")
+        fetch("https://homework-mr-binh-caro.onrender.com")
             .then(response => response.json())
             .then(data => {
                 setGameInfo(data);
