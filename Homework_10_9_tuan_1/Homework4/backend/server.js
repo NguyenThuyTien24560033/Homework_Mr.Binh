@@ -1,46 +1,3 @@
-// const express = require("express");
-
-// const app = express();
-
-// const PORT = process.env.PORT || 3000;
-
-// app.use(express.json());
-
-
-// // GET /
-// app.get("/", (req, res) => {
-//     res.json({
-//         message: "Hello World - Caro Game API"
-//     });
-// });
-
-
-// // GET game information
-// app.get("/api/game", (req, res) => {
-//     res.json({
-//         game: "Caro",
-//         boardSize: "5x5",
-//         players: ["X", "O"],
-//         rule: "Five in a row wins"
-//     });
-// });
-
-
-// // GET empty board
-// app.get("/api/board", (req, res) => {
-//     res.json({
-//         board: Array(25).fill(""),
-//         currentPlayer: "X"
-//     });
-// });
-
-
-// // Start server
-// app.listen(PORT, () => {
-//     console.log(`Server is running on port ${PORT}`);
-// });
-
-
 const express = require("express");
 const cors = require("cors");
 
@@ -51,11 +8,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-    res.json({
-        message: "Hello World - Caro Game API"
-    });
-});
+let board = Array(25).fill("");
+let currentPlayer = "X";
+let gameOver = false;
 
 app.get("/api/game", (req, res) => {
     res.json({
@@ -68,8 +23,135 @@ app.get("/api/game", (req, res) => {
 
 app.get("/api/board", (req, res) => {
     res.json({
-        board: Array(25).fill(""),
-        currentPlayer: "X"
+        board: board,
+        currentPlayer: currentPlayer,
+        gameOver: gameOver
+    });
+});
+
+app.post("/api/move", (req, res) => {
+    const { index } = req.body;
+
+    if (gameOver) {
+        return res.status(400).json({
+            message: "Game is already over"
+        });
+    }
+
+    if (index < 0 || index >= 25) {
+        return res.status(400).json({
+            message: "Invalid cell"
+        });
+    }
+
+    if (board[index] !== "") {
+        return res.status(400).json({
+            message: "Cell is already occupied"
+        });
+    }
+
+    board[index] = currentPlayer;
+
+    if (checkWinner(board)) {
+        gameOver = true;
+
+        return res.json({
+            board: board,
+            currentPlayer: currentPlayer,
+            gameOver: true,
+            winner: currentPlayer
+        });
+    }
+
+    if (!board.includes("")) {
+        gameOver = true;
+
+        return res.json({
+            board: board,
+            currentPlayer: currentPlayer,
+            gameOver: true,
+            winner: null
+        });
+    }
+
+    if (currentPlayer === "X") {
+        currentPlayer = "O";
+    } else {
+        currentPlayer = "X";
+    }
+
+    res.json({
+        board: board,
+        currentPlayer: currentPlayer,
+        gameOver: false,
+        winner: null
+    });
+});
+
+function checkWinner(board) {
+
+    for (let row = 0; row < 5; row++) {
+
+        let start = row * 5;
+
+        if (
+            board[start] !== "" &&
+            board[start] === board[start + 1] &&
+            board[start] === board[start + 2] &&
+            board[start] === board[start + 3] &&
+            board[start] === board[start + 4]
+        ) {
+            return true;
+        }
+    }
+
+    for (let col = 0; col < 5; col++) {
+
+        if (
+            board[col] !== "" &&
+            board[col] === board[col + 5] &&
+            board[col] === board[col + 10] &&
+            board[col] === board[col + 15] &&
+            board[col] === board[col + 20]
+        ) {
+            return true;
+        }
+    }
+
+    if (
+        board[0] !== "" &&
+        board[0] === board[6] &&
+        board[0] === board[12] &&
+        board[0] === board[18] &&
+        board[0] === board[24]
+    ) {
+        return true;
+    }
+
+    if (
+        board[4] !== "" &&
+        board[4] === board[8] &&
+        board[4] === board[12] &&
+        board[4] === board[16] &&
+        board[4] === board[20]
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+app.post("/api/new-game", (req, res) => {
+
+    board = Array(25).fill("");
+    currentPlayer = "X";
+    gameOver = false;
+
+    res.json({
+        board: board,
+        currentPlayer: currentPlayer,
+        gameOver: gameOver,
+        winner: null
     });
 });
 

@@ -1,5 +1,5 @@
 const board = document.getElementById("board");
-const status = document.getElementById("status");
+const statusPL= document.getElementById("status");
 const newGame = document.getElementById("newGame");
 
 let currentPlayer = "X";
@@ -36,13 +36,13 @@ function play(cell, index) {
     cell.textContent = currentPlayer;
 
     if (checkWinner()) {
-        status.textContent = "Player " + currentPlayer + " wins!";
+        statusPL.textContent = "Player " + currentPlayer + " wins!";
         gameOver = true;
         return;
     }
 
     if (!cells.includes("")) {
-        status.textContent = "Draw!";
+        statusPL.textContent = "Draw!";
         gameOver = true;
         return;
     }
@@ -53,12 +53,11 @@ function play(cell, index) {
         currentPlayer = "X";
     }
 
-    status.textContent = "Player " + currentPlayer + "'s turn";
+    statusPL.textContent = "Player " + currentPlayer + "'s turn";
 }
 
 function checkWinner() {
 
-    // Rows
     for (let row = 0; row < 5; row++) {
 
         let start = row * 5;
@@ -134,5 +133,5 @@ newGame.addEventListener("click", function () {
         cells.push("");
     }
 
-    status.textContent = "Player X's turn";
+    statusPL.textContent = "Player X's turn";
 });

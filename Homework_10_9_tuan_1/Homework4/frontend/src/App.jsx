@@ -2,14 +2,20 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
+
     const [gameInfo, setGameInfo] = useState(null);
 
     const [board, setBoard] = useState(Array(25).fill(""));
     const [player, setPlayer] = useState("X");
     const [gameOver, setGameOver] = useState(false);
+    const [winner, setWinner] = useState(null);
+
+    const API_URL = "https://homework-mr-binh-caro.onrender.com";
+    // const API_URL = "http://localhost:3000";
 
     useEffect(() => {
-        fetch("https://homework-mr-binh-caro.onrender.com")
+
+        fetch(`${API_URL}/api/game`)
             .then(response => response.json())
             .then(data => {
                 setGameInfo(data);
@@ -17,93 +23,72 @@ function App() {
             .catch(error => {
                 console.log("Error:", error);
             });
+
+        fetch(`${API_URL}/api/board`)
+            .then(response => response.json())
+            .then(data => {
+                setBoard(data.board);
+                setPlayer(data.currentPlayer);
+                setGameOver(data.gameOver);
+            })
+            .catch(error => {
+                console.log("Error:", error);
+            });
+
     }, []);
 
     function play(index) {
-        if (board[index] !== "" || gameOver) {
-            return;
-        }
 
-        const newBoard = [...board];
-        newBoard[index] = player;
+        fetch(`${API_URL}/api/move`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                index: index
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
 
-        setBoard(newBoard);
+                if (!data.board) {
+                    alert(data.message);
+                    return;
+                }
 
-        if (checkWinner(newBoard)) {
-            setGameOver(true);
-            return;
-        }
+                setBoard(data.board);
+                setPlayer(data.currentPlayer);
+                setGameOver(data.gameOver);
+                setWinner(data.winner);
 
-        if (!newBoard.includes("")) {
-            setGameOver(true);
-            return;
-        }
-
-        if (player === "X") {
-            setPlayer("O");
-        } else {
-            setPlayer("X");
-        }
-    }
-
-    function checkWinner(board) {
-        for (let row = 0; row < 5; row++) {
-            let start = row * 5;
-
-            if (
-                board[start] !== "" &&
-                board[start] === board[start + 1] &&
-                board[start] === board[start + 2] &&
-                board[start] === board[start + 3] &&
-                board[start] === board[start + 4]
-            ) {
-                return true;
-            }
-        }
-
-        for (let col = 0; col < 5; col++) {
-            if (
-                board[col] !== "" &&
-                board[col] === board[col + 5] &&
-                board[col] === board[col + 10] &&
-                board[col] === board[col + 15] &&
-                board[col] === board[col + 20]
-            ) {
-                return true;
-            }
-        }
-
-        if (
-            board[0] !== "" &&
-            board[0] === board[6] &&
-            board[0] === board[12] &&
-            board[0] === board[18] &&
-            board[0] === board[24]
-        ) {
-            return true;
-        }
-
-        if (
-            board[4] !== "" &&
-            board[4] === board[8] &&
-            board[4] === board[12] &&
-            board[4] === board[16] &&
-            board[4] === board[20]
-        ) {
-            return true;
-        }
-
-        return false;
+            })
+            .catch(error => {
+                console.log("Error:", error);
+            });
     }
 
     function newGame() {
-        setBoard(Array(25).fill(""));
-        setPlayer("X");
-        setGameOver(false);
+
+        fetch(`${API_URL}/api/new-game`, {
+            method: "POST"
+        })
+            .then(response => response.json())
+            .then(data => {
+
+                setBoard(data.board);
+                setPlayer(data.currentPlayer);
+                setGameOver(data.gameOver);
+                setWinner(data.winner);
+
+            })
+            .catch(error => {
+                console.log("Error:", error);
+            });
     }
 
     return (
         <div className="container">
+
             <h1>Caro Game</h1>
 
             {gameInfo && (
@@ -114,12 +99,17 @@ function App() {
 
             <p>
                 {gameOver
-                    ? "Game Over!"
-                    : `Player ${player}'s turn`}
+                    ? winner
+                        ? `Player ${winner} wins!`
+                        : "Game Draw!"
+                    : `Player ${player}'s turn`
+                }
             </p>
 
             <div className="board">
+
                 {board.map((value, index) => (
+
                     <div
                         className="cell"
                         key={index}
@@ -127,14 +117,24 @@ function App() {
                     >
                         {value}
                     </div>
+
                 ))}
+
             </div>
 
-            {gameOver && <h2>Game Over!</h2>}
+            {gameOver && (
+                <h2>
+                    {winner
+                        ? `Player ${winner} wins!`
+                        : "Game Draw!"
+                    }
+                </h2>
+            )}
 
             <button onClick={newGame}>
                 New Game
             </button>
+
         </div>
     );
 }
