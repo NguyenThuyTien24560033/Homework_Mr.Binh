@@ -9,6 +9,10 @@ function App() {
     const [player, setPlayer] = useState("X");
     const [gameOver, setGameOver] = useState(false);
     const [winner, setWinner] = useState(null);
+    const [winLine, setWinLine] = useState(null);
+    const [lastMoveIndex, setLastMoveIndex] = useState(null);
+    const [timeLeft, setTimeLeft] = useState(10);
+    
 
     const API_URL = "https://homework-mr-binh-caro.onrender.com";
     // const API_URL = "http://localhost:3000";
@@ -37,6 +41,31 @@ function App() {
 
     }, []);
 
+useEffect(() => {
+    if (gameOver) return;
+
+    if (timeLeft === 0) {
+        fetch(`${API_URL}/api/skip-turn`, {
+            method: "POST"
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(`Timeout! Switched to Player ${data.currentPlayer}'s turn.`);
+                setPlayer(data.currentPlayer);
+                setTimeLeft(10); 
+            })
+            .catch(error => console.log("Error:", error));
+            
+        return;
+    }
+
+    const timer = setInterval(() => {
+        setTimeLeft(prevTime => prevTime - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+}, [timeLeft, gameOver]); 
+
     function play(index) {
 
         fetch(`${API_URL}/api/move`, {
@@ -60,6 +89,9 @@ function App() {
                 setPlayer(data.currentPlayer);
                 setGameOver(data.gameOver);
                 setWinner(data.winner);
+                setWinLine(data.winLine || null);
+                setLastMoveIndex(index);
+                setTimeLeft(10);
 
             })
             .catch(error => {
@@ -79,6 +111,9 @@ function App() {
                 setPlayer(data.currentPlayer);
                 setGameOver(data.gameOver);
                 setWinner(data.winner);
+                setWinLine(null);
+                setLastMoveIndex(null);
+                setTimeLeft(10);
 
             })
             .catch(error => {
@@ -91,10 +126,16 @@ function App() {
 
             <h1>Caro Game</h1>
 
-            {gameInfo && (
+            {/* {gameInfo && (
                 <p>
                     {gameInfo.game} - {gameInfo.boardSize}
                 </p>
+            )} */}
+
+            {!gameOver && (
+                <div className={"timer-box" + (timeLeft <= 3 ? " warning" : "")}>
+                    Time: <strong>{timeLeft}s</strong>
+                </div>
             )}
 
             <p>
@@ -106,12 +147,12 @@ function App() {
                 }
             </p>
 
-            <div className="board">
+            <div className={"board" + (gameOver ? " disabled" : "")}>
 
                 {board.map((value, index) => (
 
                     <div
-                        className="cell"
+                        className={"cell " + value + (index === lastMoveIndex ? " last-move" : "")}
                         key={index}
                         onClick={() => play(index)}
                     >
@@ -120,7 +161,12 @@ function App() {
 
                 ))}
 
+                {winLine && (
+                    <div className={`winning-line ${winLine.type} ${winLine.type}-${winLine.index}`} />
+                )}
+            
             </div>
+            
 
             {gameOver && (
                 <h2>

@@ -12,14 +12,15 @@ let board = Array(25).fill("");
 let currentPlayer = "X";
 let gameOver = false;
 
-app.get("/api/game", (req, res) => {
-    res.json({
-        game: "Caro",
-        boardSize: "5x5",
-        players: ["X", "O"],
-        rule: "Five in a row wins"
-    });
-});
+
+// app.get("/api/game", (req, res) => {
+//     res.json({
+//         game: "Caro",
+//         boardSize: "5x5",
+//         players: ["X", "O"],
+//         rule: "Five in a row wins"
+//     });
+// });
 
 app.get("/api/board", (req, res) => {
     res.json({
@@ -52,14 +53,17 @@ app.post("/api/move", (req, res) => {
 
     board[index] = currentPlayer;
 
-    if (checkWinner(board)) {
+    const winResult = checkWinner(board);
+
+    if (winResult) {
         gameOver = true;
 
         return res.json({
             board: board,
             currentPlayer: currentPlayer,
             gameOver: true,
-            winner: currentPlayer
+            winner: winResult.winner,
+            winLine: winResult.winLine
         });
     }
 
@@ -70,7 +74,8 @@ app.post("/api/move", (req, res) => {
             board: board,
             currentPlayer: currentPlayer,
             gameOver: true,
-            winner: null
+            winner: null,
+            winLine: null
         });
     }
 
@@ -84,7 +89,22 @@ app.post("/api/move", (req, res) => {
         board: board,
         currentPlayer: currentPlayer,
         gameOver: false,
-        winner: null
+        winner: null,
+        winLine: null
+    });
+});
+
+app.post("/api/skip-turn", (req, res) => {
+    if (gameOver) {
+        return res.json({ currentPlayer, gameOver });
+    }
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    
+    res.json({
+        board: board,
+        currentPlayer: currentPlayer,
+        gameOver: gameOver
     });
 });
 
@@ -99,9 +119,12 @@ function checkWinner(board) {
             board[start] === board[start + 1] &&
             board[start] === board[start + 2] &&
             board[start] === board[start + 3] &&
-            board[start] === board[start + 4]
-        ) {
-            return true;
+            board[start] === board[start + 4])
+        // ) {
+        //     return true;
+        // }
+        {
+            return { winner: board[start], winLine: { type: 'row', index: row } };
         }
     }
 
@@ -112,9 +135,12 @@ function checkWinner(board) {
             board[col] === board[col + 5] &&
             board[col] === board[col + 10] &&
             board[col] === board[col + 15] &&
-            board[col] === board[col + 20]
-        ) {
-            return true;
+            board[col] === board[col + 20])
+        // ) {
+        //     return true;
+        // }
+        {
+            return { winner: board[col], winLine: { type: 'col', index: col } };
         }
     }
 
@@ -123,9 +149,12 @@ function checkWinner(board) {
         board[0] === board[6] &&
         board[0] === board[12] &&
         board[0] === board[18] &&
-        board[0] === board[24]
-    ) {
-        return true;
+        board[0] === board[24])
+    // ) {
+    //     return true;
+    // }
+    {
+        return { winner: board[0], winLine: { type: 'diagonal-main', index: 0 } };
     }
 
     if (
@@ -133,12 +162,15 @@ function checkWinner(board) {
         board[4] === board[8] &&
         board[4] === board[12] &&
         board[4] === board[16] &&
-        board[4] === board[20]
-    ) {
-        return true;
+        board[4] === board[20])
+    // ) {
+    //     return true;
+    // }
+    {
+        return { winner: board[4], winLine: { type: 'diagonal-sub', index: 0 } };
     }
 
-    return false;
+    return null;
 }
 
 app.post("/api/new-game", (req, res) => {
