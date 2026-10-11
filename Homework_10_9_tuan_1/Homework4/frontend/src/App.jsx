@@ -14,8 +14,8 @@ function App() {
     const [timeLeft, setTimeLeft] = useState(10);
     
 
-    const API_URL = "https://homework-mr-binh-caro.onrender.com";
-    // const API_URL = "http://localhost:3000";
+    // const API_URL = "https://homework-mr-binh-caro.onrender.com";
+    const API_URL = "http://localhost:3000";
 
     useEffect(() => {
 
