@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
 
 function App() {
-
+    const [page, setPage] = useState("login");
+    const [user, setUser] = useState(null);
     const [gameInfo, setGameInfo] = useState(null);
 
     const [board, setBoard] = useState(Array(25).fill(""));
@@ -14,10 +17,11 @@ function App() {
     const [timeLeft, setTimeLeft] = useState(10);
     
 
-    // const API_URL = "https://homework-mr-binh-caro.onrender.com";
-    const API_URL = "http://localhost:3000";
+    const API_URL = "https://homework-mr-binh-caro.onrender.com";
+    // const API_URL = "http://localhost:3000";
 
     useEffect(() => {
+        if (page !== "game") return;
 
         fetch(`${API_URL}/api/game`)
             .then(response => response.json())
@@ -39,32 +43,43 @@ function App() {
                 console.log("Error:", error);
             });
 
-    }, []);
+    }, [page]);
 
-useEffect(() => {
-    if (gameOver) return;
+    useEffect(() => {
+        if (page !== "game" || gameOver) return;
 
-    if (timeLeft === 0) {
-        fetch(`${API_URL}/api/skip-turn`, {
-            method: "POST"
-        })
-            .then(response => response.json())
-            .then(data => {
-                alert(`Timeout! Switched to Player ${data.currentPlayer}'s turn.`);
-                setPlayer(data.currentPlayer);
-                setTimeLeft(10); 
+        if (timeLeft === 0) {
+            fetch(`${API_URL}/api/skip-turn`, {
+                method: "POST"
             })
-            .catch(error => console.log("Error:", error));
-            
-        return;
+                .then(response => response.json())
+                .then(data => {
+                    alert(`Timeout! Switched to Player ${data.currentPlayer}'s turn.`);
+                    setPlayer(data.currentPlayer);
+                    setTimeLeft(10); 
+                })
+                .catch(error => console.log("Error:", error));
+                
+            return;
+        }
+
+        const timer = setInterval(() => {
+            setTimeLeft(prevTime => prevTime - 1);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [page, timeLeft, gameOver]); 
+
+
+    function handleLoginSuccess(userData) {
+        setUser(userData);
+        setPage("game");
     }
 
-    const timer = setInterval(() => {
-        setTimeLeft(prevTime => prevTime - 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-}, [timeLeft, gameOver]); 
+    function handleLogout() {
+        setUser(null);
+        setPage("login");
+    }
 
     function play(index) {
 
@@ -121,16 +136,40 @@ useEffect(() => {
             });
     }
 
+    if (page === "register") {
     return (
+        <Register
+            onSwitchToLogin={() => setPage("login")}
+        />
+    );
+}
+
+if (page === "login") {
+    return (
+        <Login
+            onLoginSuccess={handleLoginSuccess}
+            onSwitchToRegister={() => setPage("register")}
+        />
+    );
+}
+
+
+    return (
+
+         <>
+        <header className="user-header">
+            <span>
+                Welcome, {user?.username || "Player"}!
+            </span>
+
+            <button onClick={handleLogout}>
+                Log Out
+            </button>
+        </header>
+
         <div className="container">
 
             <h1>Caro Game</h1>
-
-            {/* {gameInfo && (
-                <p>
-                    {gameInfo.game} - {gameInfo.boardSize}
-                </p>
-            )} */}
 
             {!gameOver && (
                 <div className={"timer-box" + (timeLeft <= 3 ? " warning" : "")}>
@@ -182,6 +221,7 @@ useEffect(() => {
             </button>
 
         </div>
+          </>
     );
 }
 
