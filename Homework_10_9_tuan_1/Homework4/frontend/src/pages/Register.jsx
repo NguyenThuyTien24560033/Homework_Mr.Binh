@@ -28,6 +28,9 @@ function Register({ onSwitchToLogin }) {
       setUsername("");
       setPassword("");
       setConfirmPassword("");
+      setTimeout(() => {
+        onSwitchToLogin();
+      }, 500);
     } catch (err) {
       setError(err.message || "Registration failed.");
     } finally {
