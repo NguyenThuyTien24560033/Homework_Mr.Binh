@@ -1,0 +1,48 @@
+
+.game-status-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+
+.timer-box {
+  background-color: #f0f9ff;
+  border: 1.5px solid var(--border-color);
+  color: var(--primary-color);
+  padding: 0.5rem 1.25rem;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.timer-box strong {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+
+.timer-box.warning {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
+  color: #ef4444;
+  animation: pulse 1s infinite;
+}
+
+.container p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: center;
+}
+
+.container h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  text-align: center;
+  margin-top: 0.25rem;
+}

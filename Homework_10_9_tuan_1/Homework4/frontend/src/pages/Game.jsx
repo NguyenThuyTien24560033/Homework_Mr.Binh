@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import GameBoard from "../components/GameBoard.jsx";
 import GameHeader from "../components/GameHeader.jsx";
 import GameStatus from "../components/GameStatus.jsx";
+import "../styles/game.css"
 
 import {
     getGameInfo,

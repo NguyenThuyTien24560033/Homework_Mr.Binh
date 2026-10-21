@@ -1,3 +1,5 @@
+import "../styles/game-board.css"
+
 function GameBoard({
     board,
     gameOver,

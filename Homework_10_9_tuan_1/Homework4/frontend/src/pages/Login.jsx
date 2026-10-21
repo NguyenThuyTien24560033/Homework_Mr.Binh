@@ -1,8 +1,9 @@
 import { useState } from "react";
-import  {loginUser}  from "../services/auth.service.js";
+import { loginUser } from "../services/auth.service.js";
+import "../styles/auth.css";
 
 function Login({ onLoginSuccess, onSwitchToRegister }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,8 +15,10 @@ function Login({ onLoginSuccess, onSwitchToRegister }) {
     setLoading(true);
 
     try {
-      const data = await loginUser(username, password);
-      onLoginSuccess(data.user);
+      const data = await loginUser({ email, password });
+      
+      
+      onLoginSuccess(data.user || data);
     } catch (err) {
       setError(err.message || "Login failed.");
     } finally {
@@ -29,13 +32,13 @@ function Login({ onLoginSuccess, onSwitchToRegister }) {
         <h1>Welcome Back</h1>
         <p>Log in to continue playing Caro</p>
 
-        <label htmlFor="login-username">Username</label>
+        <label htmlFor="login-email">Email</label>
         <input
-          id="login-username"
-          type="text"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          placeholder="Enter your username"
+          id="login-email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="Enter your email"
           required
         />
 

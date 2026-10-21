@@ -7,84 +7,92 @@ function createError(message, statusCode) {
     return error;
 }
 
-export async function registerUser(username, password) {
-    if (
-        typeof username !== "string" ||
-        typeof password !== "string" ||
-        !username.trim() ||
-        !password
-    ) {
-        throw createError("Username and password are required", 400);
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function registerUser({ username, email, password, confirmPassword }) {
+    if (!username || !email || !password || !confirmPassword) {
+        throw createError("All fields (username, email, password, confirmPassword) are required", 400);
     }
 
-    username = username.trim();
+    if (
+        typeof username !== "string" ||
+        typeof email !== "string" ||
+        typeof password !== "string" ||
+        typeof confirmPassword !== "string"
+    ) {
+        throw createError("Invalid input data types", 400);
+    }
 
-    if (username.length < 3 || username.length > 20) {
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (cleanUsername.length < 3 || cleanUsername.length > 20) {
         throw createError("Username must be 3-20 characters long", 400);
+    }
+
+    if (!EMAIL_REGEX.test(cleanEmail)) {
+        throw createError("Invalid email address format", 400);
     }
 
     if (password.length < 8) {
         throw createError("Password must be at least 8 characters long", 400);
     }
 
-    const existingUser = await User.findOne({ username });
-
-    if (existingUser) {
-        throw createError("Username already exists", 409);
+    if (password !== confirmPassword) {
+        throw createError("Passwords do not match", 400);
     }
 
+    const existingUser = await User.findOne({ email: cleanEmail });
+
+    if (existingUser) {
+        throw createError("Email already exists", 409);
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
     try {
         const user = await User.create({
-            username,
+            username: cleanUsername,
+            email: cleanEmail,
             passwordHash,
         });
 
         return {
             id: user._id,
             username: user.username,
+            email: user.email,
             createdAt: user.createdAt,
         };
     } catch (error) {
         if (error.code === 11000) {
-            throw createError("Username already exists", 409);
+            throw createError("Email already exists", 409);
         }
-
         throw error;
     }
 }
 
-export async function loginUser(username, password) {
-    if (
-        typeof username !== "string" ||
-        typeof password !== "string" ||
-        !username.trim() ||
-        !password
-    ) {
-        throw createError("Username and password are required", 400);
+export async function loginUser({ email, password }) {
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
+        throw createError("Email and password are required", 400);
     }
 
-    const user = await User.findOne({
-        username: username.trim(),
-    });
+    const cleanEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: cleanEmail });
 
     if (!user) {
-        throw createError("Invalid username or password", 401);
+        throw createError("Invalid email or password", 401);
     }
 
-    const isPasswordValid = await bcrypt.compare(
-        password,
-        user.passwordHash
-    );
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-        throw createError("Invalid username or password", 401);
+        throw createError("Invalid email or password", 401);
     }
 
     return {
         id: user._id,
         username: user.username,
+        email: user.email,
     };
 }

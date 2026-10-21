@@ -1,3 +1,4 @@
+import "../styles/game-header.css"
 function GameHeader({ username, onLogout }) {
     return (
         <header className="user-header">

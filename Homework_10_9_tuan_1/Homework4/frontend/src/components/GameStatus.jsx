@@ -1,3 +1,4 @@
+import "../styles/game-status.css"
 function GameStatus({ player, gameOver, winner, timeLeft }) {
     return (
         <>

@@ -1,8 +1,10 @@
 import { useState } from "react";
-import  {registerUser}  from "../services/auth.service";
+import { registerUser } from "../services/auth.service";
+import "../styles/auth.css";
 
 function Register({ onSwitchToLogin }) {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,11 +25,19 @@ function Register({ onSwitchToLogin }) {
     setLoading(true);
 
     try {
-      const data = await registerUser(username, password);
+      const data = await registerUser({
+        username,
+        email,
+        password,
+        confirmPassword,
+      });
+
       setMessage(data.message || "Registration successful!");
       setUsername("");
+      setEmail("");
       setPassword("");
       setConfirmPassword("");
+
       setTimeout(() => {
         onSwitchToLogin();
       }, 500);
@@ -51,6 +61,16 @@ function Register({ onSwitchToLogin }) {
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           placeholder="Enter your username"
+          required
+        />
+
+        <label htmlFor="register-email">Email</label>
+        <input
+          id="register-email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="Enter your email"
           required
         />
 
