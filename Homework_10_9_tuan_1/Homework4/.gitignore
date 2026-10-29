@@ -1,2 +1,16 @@
-node_modules/
+
+# Environment variables
 .env
+.env.*
+
+# Keep example environment files
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Lock files
+package-lock.json
+
+# Build output
+dist/

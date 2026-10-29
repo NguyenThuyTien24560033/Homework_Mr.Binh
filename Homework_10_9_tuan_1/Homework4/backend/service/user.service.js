@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import User from "../model/user.model.js";
 
 function createError(message, statusCode) {
@@ -90,9 +91,18 @@ export async function loginUser({ email, password }) {
         throw createError("Invalid email or password", 401);
     }
 
+    const token = jwt.sign(
+        { id: user._id, username: user.username, email: user.email },
+        process.env.JWT_SECRET || "default_jwt_secret",
+        { expiresIn: "2d" }
+    );
+
     return {
-        id: user._id,
-        username: user.username,
-        email: user.email,
+        user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+        },
+        token,
     };
 }

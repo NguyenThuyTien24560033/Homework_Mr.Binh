@@ -1,14 +1,19 @@
 import express from "express";
-import {registerUser, loginUser} from "../service/user.service.js";
+import { registerUser, loginUser } from "../service/user.service.js";
+import { authenticateToken } from "../middleware/auth.middleware.js";
 
 const userRouter = express.Router();
 
 userRouter.post("/register", async (req, res) => {
     try {
-        const user = await registerUser(
-            req.body.username,
-            req.body.password
-        );
+        const { username, email, password, confirmPassword } = req.body;
+
+        const user = await registerUser({
+            username,
+            email,
+            password,
+            confirmPassword,
+        });
 
         return res.status(201).json({
             message: "Registration successful",
@@ -31,14 +36,17 @@ userRouter.post("/register", async (req, res) => {
 
 userRouter.post("/login", async (req, res) => {
     try {
-        const user = await loginUser(
-            req.body.username,
-            req.body.password
-        );
+        const { email, password } = req.body;
+
+        const result = await loginUser({
+            email,
+            password,
+        });
 
         return res.status(200).json({
             message: "Login successful",
-            user,
+            user: result.user,
+            token: result.token,
         });
     } catch (error) {
         if (error.statusCode) {
@@ -53,6 +61,12 @@ userRouter.post("/login", async (req, res) => {
             message: "Internal server error",
         });
     }
+});
+
+userRouter.get("/me", authenticateToken, (req, res) => {
+    return res.status(200).json({
+        user: req.user,
+    });
 });
 
 export default userRouter;
