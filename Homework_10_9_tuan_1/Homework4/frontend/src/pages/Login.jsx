@@ -1,9 +1,15 @@
 import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { loginUser } from "../services/auth.service.js";
 import "../styles/auth.css";
 
-function Login({ onLoginSuccess, onSwitchToRegister }) {
-  const [email, setEmail] = useState("");
+function Login({ onLoginSuccess }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState(() => {
+    return location.state?.registeredEmail || localStorage.getItem("last_login_email") || "";
+  });
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,8 +23,10 @@ function Login({ onLoginSuccess, onSwitchToRegister }) {
     try {
       const data = await loginUser({ email, password });
       
-      
+      localStorage.setItem("last_login_email", email);
+
       onLoginSuccess(data.user || data);
+      navigate("/game");
     } catch (err) {
       setError(err.message || "Login failed.");
     } finally {
@@ -35,6 +43,8 @@ function Login({ onLoginSuccess, onSwitchToRegister }) {
         <label htmlFor="login-email">Email</label>
         <input
           id="login-email"
+          name="email"
+          autoComplete="username email"
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -45,6 +55,8 @@ function Login({ onLoginSuccess, onSwitchToRegister }) {
         <label htmlFor="login-password">Password</label>
         <input
           id="login-password"
+          name="password"
+          autoComplete="current-password"
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -60,13 +72,9 @@ function Login({ onLoginSuccess, onSwitchToRegister }) {
 
         <p className="auth-switch">
           Don't have an account?{" "}
-          <button
-            type="button"
-            className="auth-link"
-            onClick={onSwitchToRegister}
-          >
+          <Link to="/register" className="auth-link">
             Sign Up
-          </button>
+          </Link>
         </p>
       </form>
     </div>

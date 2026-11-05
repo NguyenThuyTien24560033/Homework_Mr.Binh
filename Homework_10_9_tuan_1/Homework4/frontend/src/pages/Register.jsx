@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../services/auth.service";
 import "../styles/auth.css";
 
-function Register({ onSwitchToLogin }) {
+function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,6 +11,7 @@ function Register({ onSwitchToLogin }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -32,14 +34,15 @@ function Register({ onSwitchToLogin }) {
         confirmPassword,
       });
 
+      const registeredEmail = email; 
+
       setMessage(data.message || "Registration successful!");
       setUsername("");
       setEmail("");
       setPassword("");
       setConfirmPassword("");
-
       setTimeout(() => {
-        onSwitchToLogin();
+        navigate("/login", { state: { registeredEmail } });
       }, 500);
     } catch (err) {
       setError(err.message || "Registration failed.");
@@ -57,6 +60,8 @@ function Register({ onSwitchToLogin }) {
         <label htmlFor="register-username">Username</label>
         <input
           id="register-username"
+          name="username"
+          autoComplete="username"
           type="text"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
@@ -67,6 +72,8 @@ function Register({ onSwitchToLogin }) {
         <label htmlFor="register-email">Email</label>
         <input
           id="register-email"
+          name="email"
+          autoComplete="email"
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -77,6 +84,8 @@ function Register({ onSwitchToLogin }) {
         <label htmlFor="register-password">Password</label>
         <input
           id="register-password"
+          name="new-password"
+          autoComplete="new-password"
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -87,6 +96,8 @@ function Register({ onSwitchToLogin }) {
         <label htmlFor="confirm-password">Confirm Password</label>
         <input
           id="confirm-password"
+          name="confirm-password"
+          autoComplete="new-password"
           type="password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
@@ -103,13 +114,9 @@ function Register({ onSwitchToLogin }) {
 
         <p className="auth-switch">
           Already have an account?{" "}
-          <button
-            type="button"
-            className="auth-link"
-            onClick={onSwitchToLogin}
-          >
+          <Link to="/login" className="auth-link">
             Log In
-          </button>
+          </Link>
         </p>
       </form>
     </div>
