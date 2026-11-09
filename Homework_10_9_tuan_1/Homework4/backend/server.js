@@ -7,12 +7,15 @@ import router from "./route/game.route.js";
 import { connectDB } from "./config/db.js";
 import userRouter from "./route/user.route.js";
 import { initGameSocket } from "./socket/game.socket.js";
+import { setupSwagger } from "./config/swagger.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+setupSwagger(app);
 
 app.use("/api", router);
 app.use("/api", userRouter);
