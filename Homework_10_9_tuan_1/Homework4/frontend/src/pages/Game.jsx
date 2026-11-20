@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import GameBoard from "../components/GameBoard.jsx";
 import GameHeader from "../components/GameHeader.jsx";
 import GameStatus from "../components/GameStatus.jsx";
+import Toast from "../components/Toast.jsx";
 import { socket } from "../services/socket.js";
 import "../styles/game.css";
 import "../styles/room.css";
@@ -42,6 +43,16 @@ function Game({ user, onLogout }) {
     const [myRole, setMyRole] = useState("");
     const [opponentJoined, setOpponentJoined] = useState(false);
 
+    const [toast, setToast] = useState(null);
+
+    const showToast = useCallback((message, type = "info") => {
+        setToast({ message, type });
+    }, []);
+
+    const hideToast = useCallback(() => {
+        setToast(null);
+    }, []);
+
     useEffect(() => {
         const canRun = (mode === "local" && !gameOver) || (mode === "online" && !gameOver && roomId && opponentJoined);
         if (!canRun) return;
@@ -51,7 +62,7 @@ function Game({ user, onLogout }) {
                 const nextPlayer = currentPlayer === "X" ? "O" : "X";
                 setCurrentPlayer(nextPlayer);
                 setTimeLeft(10);
-                alert(`Timeout! Switched to Player ${nextPlayer}'s turn.`);
+                showToast(`Timeout! Switched to Player ${nextPlayer}'s turn.`, "warning");
             } else {
                 socket.emit("skip_turn", { roomId });
                 setTimeLeft(10);
@@ -64,7 +75,7 @@ function Game({ user, onLogout }) {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [timeLeft, gameOver, mode, roomId, opponentJoined, currentPlayer]);
+    }, [timeLeft, gameOver, mode, roomId, opponentJoined, currentPlayer, showToast]);
 
     useEffect(() => {
         function handleRoomCreated(data) {
@@ -77,6 +88,7 @@ function Game({ user, onLogout }) {
             setWinLine(null);
             setOpponentJoined(false);
             setTimeLeft(10);
+            showToast("Room created successfully. Waiting for an opponent.", "success");
         }
 
         function handleRoomJoined(data) {
@@ -89,6 +101,7 @@ function Game({ user, onLogout }) {
             setWinLine(null);
             setOpponentJoined(true);
             setTimeLeft(10);
+            showToast("Joined room successfully.", "success");
         }
 
         function handleGameStart(data) {
@@ -99,6 +112,7 @@ function Game({ user, onLogout }) {
             setWinner(null);
             setWinLine(null);
             setTimeLeft(10);
+            showToast("Both players ready! Match started.", "success");
         }
 
         function handleMoveMade(data) {
@@ -114,7 +128,7 @@ function Game({ user, onLogout }) {
         function handleTurnSkipped(data) {
             setCurrentPlayer(data.room.currentPlayer);
             setTimeLeft(10);
-            alert(`Timeout! Switched to Player ${data.room.currentPlayer}'s turn.`);
+            showToast(`Timeout! Switched to Player ${data.room.currentPlayer}'s turn.`, "warning");
         }
 
         function handleGameRestarted(data) {
@@ -125,15 +139,20 @@ function Game({ user, onLogout }) {
             setWinLine(null);
             setLastMoveIndex(null);
             setTimeLeft(10);
+            showToast("Game restarted.", "info");
         }
 
         function handleOpponentLeft(message) {
-            alert(message);
+            showToast(message, "error");
             resetOnlineState();
         }
 
         function handleErrorMessage(message) {
-            alert(message);
+            showToast(message, "error");
+        }
+
+        function handleConnectError() {
+            showToast("Unable to connect to game server. Please check your connection.", "error");
         }
 
         socket.on("room_created", handleRoomCreated);
@@ -144,6 +163,7 @@ function Game({ user, onLogout }) {
         socket.on("game_restarted", handleGameRestarted);
         socket.on("opponent_left", handleOpponentLeft);
         socket.on("error_message", handleErrorMessage);
+        socket.on("connect_error", handleConnectError);
 
         return () => {
             socket.off("room_created", handleRoomCreated);
@@ -154,8 +174,9 @@ function Game({ user, onLogout }) {
             socket.off("game_restarted", handleGameRestarted);
             socket.off("opponent_left", handleOpponentLeft);
             socket.off("error_message", handleErrorMessage);
+            socket.off("connect_error", handleConnectError);
         };
-    }, []);
+    }, [showToast]);
 
     function resetOnlineState() {
         setRoomId("");
@@ -186,7 +207,7 @@ function Game({ user, onLogout }) {
 
     function handleJoinRoom() {
         if (!joinCode.trim()) {
-            alert("Please enter a room code!");
+            showToast("Please enter a room code!", "warning");
             return;
         }
         socket.emit("join_room", { roomId: joinCode.trim(), username: user?.username || "Player" });
@@ -196,6 +217,7 @@ function Game({ user, onLogout }) {
         socket.disconnect();
         socket.connect();
         resetOnlineState();
+        showToast("You left the room.", "info");
     }
 
     function handlePlay(index) {
@@ -226,15 +248,15 @@ function Game({ user, onLogout }) {
             setCurrentPlayer((prev) => (prev === "X" ? "O" : "X"));
         } else {
             if (!roomId) {
-                alert("Please create or join a room first!");
+                showToast("Please create or join a room first!", "warning");
                 return;
             }
             if (!opponentJoined) {
-                alert("Waiting for an opponent to join!");
+                showToast("Waiting for an opponent to join!", "info");
                 return;
             }
             if (currentPlayer !== myRole) {
-                alert("It is not your turn!");
+                showToast("It is not your turn!", "warning");
                 return;
             }
 
@@ -260,6 +282,14 @@ function Game({ user, onLogout }) {
     return (
         <>
             <GameHeader username={user?.username} onLogout={onLogout} />
+
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
+                />
+            )}
 
             <main className="container">
                 <h1>Caro Game</h1>

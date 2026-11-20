@@ -12,7 +12,6 @@ function App() {
     const [user, setUser] = useState(null);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-    // Kiểm tra token cũ khi mở trang hoặc F5
     useEffect(() => {
         async function checkSession() {
             try {
@@ -20,8 +19,6 @@ function App() {
                 if (currentUser) {
                     setUser(currentUser);
                 }
-            } catch (error) {
-                console.error("Session check error:", error);
             } finally {
                 setIsCheckingAuth(false);
             }
@@ -42,7 +39,7 @@ function App() {
     if (isCheckingAuth) {
         return (
             <div style={{ textAlign: "center", marginTop: "20%" }}>
-                <p>Loading</p>
+                <p>Loading...</p>
             </div>
         );
     }
