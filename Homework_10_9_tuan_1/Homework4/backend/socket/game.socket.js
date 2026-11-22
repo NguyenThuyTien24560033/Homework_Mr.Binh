@@ -6,11 +6,29 @@ function generateRoomCode() {
     return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
+function cleanupStaleRooms() {
+    const now = Date.now();
+    for (const [roomId, room] of rooms.entries()) {
+        if (now - room.createdAt > 30 * 60 * 1000) {
+            rooms.delete(roomId);
+        }
+    }
+}
+
 export function initGameSocket(io) {
     io.on("connection", (socket) => {
         console.log(`Client connected: ${socket.id}`);
 
         socket.on("create_room", ({ username }) => {
+            cleanupStaleRooms();
+
+            if (socket.roomId && rooms.has(socket.roomId)) {
+                const oldRoom = rooms.get(socket.roomId);
+                if (!oldRoom.players.O) {
+                    rooms.delete(socket.roomId);
+                }
+            }
+
             let roomId = generateRoomCode();
             while (rooms.has(roomId)) {
                 roomId = generateRoomCode();
@@ -23,6 +41,7 @@ export function initGameSocket(io) {
                 gameOver: false,
                 winner: null,
                 winLine: null,
+                createdAt: Date.now(),
                 lastTurnChange: Date.now(),
                 players: {
                     X: { socketId: socket.id, username: username || "Player 1" },
@@ -79,7 +98,7 @@ export function initGameSocket(io) {
                 return socket.emit("error_message", "It is not your turn!");
             }
 
-            if (index < 0 || index >= 25 || room.board[index] !== "") {
+            if (!Number.isInteger(index) || index < 0 || index >= 25 || room.board[index] !== "") {
                 return;
             }
 

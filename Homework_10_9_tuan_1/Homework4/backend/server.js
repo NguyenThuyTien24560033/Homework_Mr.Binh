@@ -17,6 +17,10 @@ app.use(express.json());
 
 setupSwagger(app);
 
+app.get("/", (req, res) => {
+    res.send("Caro Game Backend API is running successfully!");
+});
+
 app.use("/api", router);
 app.use("/api", userRouter);
 

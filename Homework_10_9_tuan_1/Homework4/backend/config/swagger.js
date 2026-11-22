@@ -11,6 +11,10 @@ const options = {
     },
     servers: [
       {
+        url: "https://homework-mr-binh-caro.onrender.com/api",
+        description: "Production Cloud Server (Render)",
+      },
+      {
         url: "http://localhost:3000/api",
         description: "Development Local Server",
       },

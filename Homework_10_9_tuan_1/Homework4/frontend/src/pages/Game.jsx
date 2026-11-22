@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import GameBoard from "../components/GameBoard.jsx";
 import GameHeader from "../components/GameHeader.jsx";
 import GameStatus from "../components/GameStatus.jsx";
@@ -45,6 +45,22 @@ function Game({ user, onLogout }) {
 
     const [toast, setToast] = useState(null);
 
+    const stateRef = useRef({
+        mode,
+        gameOver,
+        roomId,
+        opponentJoined,
+        currentPlayer,
+    });
+
+    stateRef.current = {
+        mode,
+        gameOver,
+        roomId,
+        opponentJoined,
+        currentPlayer,
+    };
+
     const showToast = useCallback((message, type = "info") => {
         setToast({ message, type });
     }, []);
@@ -54,28 +70,47 @@ function Game({ user, onLogout }) {
     }, []);
 
     useEffect(() => {
-        const canRun = (mode === "local" && !gameOver) || (mode === "online" && !gameOver && roomId && opponentJoined);
-        if (!canRun) return;
-
-        if (timeLeft === 0) {
-            if (mode === "local") {
-                const nextPlayer = currentPlayer === "X" ? "O" : "X";
-                setCurrentPlayer(nextPlayer);
-                setTimeLeft(10);
-                showToast(`Timeout! Switched to Player ${nextPlayer}'s turn.`, "warning");
-            } else {
-                socket.emit("skip_turn", { roomId });
-                setTimeLeft(10);
+        if (mode === "online") {
+            if (!socket.connected) {
+                socket.connect();
             }
-            return;
+        } else {
+            if (socket.connected) {
+                socket.disconnect();
+            }
         }
 
+        return () => {
+            if (socket.connected) {
+                socket.disconnect();
+            }
+        };
+    }, [mode]);
+
+    useEffect(() => {
         const timer = setInterval(() => {
-            setTimeLeft((prev) => prev - 1);
+            const { mode: currentMode, gameOver: isOver, roomId: currentRoom, opponentJoined: hasOpponent, currentPlayer: turnPlayer } = stateRef.current;
+            const canRun = (currentMode === "local" && !isOver) || (currentMode === "online" && !isOver && currentRoom && hasOpponent);
+
+            if (!canRun) return;
+
+            setTimeLeft((prev) => {
+                if (prev <= 1) {
+                    if (currentMode === "local") {
+                        const nextPlayer = turnPlayer === "X" ? "O" : "X";
+                        setCurrentPlayer(nextPlayer);
+                        showToast(`Timeout! Switched to Player ${nextPlayer}'s turn.`, "warning");
+                    } else {
+                        socket.emit("skip_turn", { roomId: currentRoom });
+                    }
+                    return 10;
+                }
+                return prev - 1;
+            });
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [timeLeft, gameOver, mode, roomId, opponentJoined, currentPlayer, showToast]);
+    }, [showToast]);
 
     useEffect(() => {
         function handleRoomCreated(data) {
@@ -192,16 +227,15 @@ function Game({ user, onLogout }) {
     }
 
     function switchMode(newMode) {
-        if (mode === "online" && roomId) {
-            socket.disconnect();
-            socket.connect();
-        }
         setMode(newMode);
         resetOnlineState();
         setTimeLeft(10);
     }
 
     function handleCreateRoom() {
+        if (!socket.connected) {
+            socket.connect();
+        }
         socket.emit("create_room", { username: user?.username || "Player" });
     }
 
@@ -210,12 +244,17 @@ function Game({ user, onLogout }) {
             showToast("Please enter a room code!", "warning");
             return;
         }
+        if (!socket.connected) {
+            socket.connect();
+        }
         socket.emit("join_room", { roomId: joinCode.trim(), username: user?.username || "Player" });
     }
 
     function handleLeaveRoom() {
-        socket.disconnect();
-        socket.connect();
+        if (socket.connected) {
+            socket.disconnect();
+            socket.connect();
+        }
         resetOnlineState();
         showToast("You left the room.", "info");
     }
